@@ -6,6 +6,8 @@ import { useRealTimeMetrics } from '@/hooks/useRealTimeMetrics';
 import MetricCard from '@/components/metrics/MetricCard';
 import QualityChart from '@/components/metrics/QualityChart';
 import PrivacyGauge from '@/components/metrics/PrivacyGauge';
+import PipelineControls from '@/components/controls/PipelineControls';
+import ResourceMonitor from '@/components/controls/ResourceMonitor';
 import { useState, useEffect } from 'react';
 
 export default function TrainPage() {
@@ -105,10 +107,10 @@ export default function TrainPage() {
           </div>
           <div className="h-64 mt-4">
             {lossHistory.length > 0 ? (
-              <QualityChart 
-                data={lossHistory} 
-                labels={lossHistory.map((_, i) => `T-${20-i}`)} 
-                label="Generator Loss" 
+              <QualityChart
+                data={lossHistory}
+                labels={lossHistory.map((_, i) => `T-${20-i}`)}
+                label="Generator Loss"
               />
             ) : (
               <div className="h-full flex flex-col items-center justify-center bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
@@ -120,6 +122,7 @@ export default function TrainPage() {
         </div>
 
         <div className="space-y-6">
+          <ResourceMonitor />
           <div className="glass-card flex flex-col items-center justify-center text-center">
             <h3 className="text-lg font-bold text-medical-text mb-6 w-full text-left">Privacy Safeguard</h3>
             <PrivacyGauge score={trainingProgress ? 0.984 : 0.0} />
@@ -127,7 +130,7 @@ export default function TrainPage() {
               Our Differentially Private GAN ensures patient re-identification risk remains below 0.01%.
             </p>
           </div>
-          
+
           <div className="p-6 rounded-2xl bg-indigo-600 text-white shadow-xl shadow-indigo-100 relative overflow-hidden">
             <div className="relative z-10">
               <div className="flex items-center gap-2 mb-4">
