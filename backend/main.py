@@ -109,6 +109,29 @@ async def train_model(current_user: User = Depends(get_current_active_user)):
 async def get_analytics(current_user: User = Depends(get_current_active_user)):
     return analytics_engine.get_metrics()
 
+from fastapi import UploadFile, BackgroundTasks
+from .upload_manager import upload_manager
+from .models import UploadResponse
+import uuid
+
+@app.post(f"{settings.API_V1_STR}/upload", response_model=UploadResponse, tags=["Core"])
+async def upload_dataset(
+    background_tasks: BackgroundTasks,
+    files: List[UploadFile],
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Upload and process a batch of medical files (DICOM/Images).
+    """
+    task_id = str(uuid.uuid4())
+    background_tasks.add_task(upload_manager.process_dataset, task_id, files)
+    
+    return UploadResponse(
+        task_id=task_id,
+        status="queued",
+        message=f"Processing {len(files)} files in background"
+    )
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("backend.main:app", host="0.0.0.0", port=8000, reload=True)

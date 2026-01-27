@@ -99,3 +99,23 @@ class TrainingMetrics(BaseModel):
     discriminator_loss: float
     generator_loss: float
 
+class ProcessingStatus(str, Enum):
+    UPLOADING = "uploading"
+    PROCESSING = "processing"
+    COMPLETED = "completed"
+    ERROR = "error"
+
+class Dataset(BaseModel):
+    id: str
+    name: str
+    type: str
+    file_count: int
+    total_size_bytes: int
+    upload_date: datetime
+    status: ProcessingStatus
+    processed_count: int = 0
+
+class UploadResponse(BaseModel):
+    task_id: str
+    status: str
+    message: str
