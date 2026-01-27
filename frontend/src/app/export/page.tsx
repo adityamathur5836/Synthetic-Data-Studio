@@ -1,6 +1,7 @@
 "use client";
 
 import { ShieldCheck, Download, ExternalLink, FileJson } from 'lucide-react';
+import Link from 'next/link';
 
 export default function ExportPage() {
   return (
