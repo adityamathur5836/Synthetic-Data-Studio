@@ -33,6 +33,14 @@ interface ResourceUsage {
     diskSpace: number;
 }
 
+interface GalleryFilters {
+    condition?: string;
+    minConfidence: number;
+    severity?: string;
+    gender?: string;
+    flaggedOnly: boolean;
+}
+
 interface MedicalState {
     samples: SyntheticSample[];
     analytics: AnalyticsMetrics | null;
@@ -47,7 +55,11 @@ interface MedicalState {
     pipelineConfig: PipelineConfig;
     resourceUsage: ResourceUsage;
 
+    // Gallery State
+    galleryFilters: GalleryFilters;
+
     setSamples: (samples: SyntheticSample[]) => void;
+    updateSample: (id: string, updates: Partial<SyntheticSample>) => void;
     addSamples: (samples: SyntheticSample[]) => void;
     setAnalytics: (analytics: AnalyticsMetrics) => void;
     setTrainingProgress: (progress: TrainingMetrics) => void;
@@ -58,6 +70,7 @@ interface MedicalState {
     addAuditLog: (action: string, details: string) => void;
     setPipelineConfig: (config: Partial<PipelineConfig>) => void;
     setResourceUsage: (usage: Partial<ResourceUsage>) => void;
+    setGalleryFilters: (filters: Partial<GalleryFilters>) => void;
     resetPipeline: () => void;
 }
 
@@ -79,6 +92,11 @@ const defaultResourceUsage: ResourceUsage = {
     diskSpace: 0,
 };
 
+const defaultGalleryFilters: GalleryFilters = {
+    minConfidence: 0.7,
+    flaggedOnly: false,
+};
+
 export const useMedicalStore = create<MedicalState>()(
     persist(
         (set) => ({
@@ -92,8 +110,12 @@ export const useMedicalStore = create<MedicalState>()(
             auditLogs: [],
             pipelineConfig: defaultPipelineConfig,
             resourceUsage: defaultResourceUsage,
+            galleryFilters: defaultGalleryFilters,
 
             setSamples: (samples: SyntheticSample[]) => set({ samples }),
+            updateSample: (id: string, updates: Partial<SyntheticSample>) => set((state: MedicalState) => ({
+                samples: state.samples.map(s => s.id === id ? { ...s, ...updates } : s)
+            })),
             addSamples: (newSamples: SyntheticSample[]) => set((state: MedicalState) => ({
                 samples: [...state.samples, ...newSamples]
             })),
@@ -121,12 +143,17 @@ export const useMedicalStore = create<MedicalState>()(
             setResourceUsage: (usage: Partial<ResourceUsage>) => set((state: MedicalState) => ({
                 resourceUsage: { ...state.resourceUsage, ...usage }
             })),
+            setGalleryFilters: (filters: Partial<GalleryFilters>) => set((state: MedicalState) => ({
+                galleryFilters: { ...state.galleryFilters, ...filters }
+            })),
             resetPipeline: () => set({
                 trainingProgress: null,
                 isTraining: false,
                 isGenerating: false,
                 pipelineConfig: defaultPipelineConfig,
-                resourceUsage: defaultResourceUsage
+                resourceUsage: defaultResourceUsage,
+                samples: [],
+                galleryFilters: defaultGalleryFilters
             })
         }),
         {
@@ -135,7 +162,8 @@ export const useMedicalStore = create<MedicalState>()(
             partialize: (state: MedicalState) => ({
                 pipelineConfig: state.pipelineConfig,
                 auditLogs: state.auditLogs,
-                currentStep: state.currentStep
+                currentStep: state.currentStep,
+                galleryFilters: state.galleryFilters
             }),
         }
     )

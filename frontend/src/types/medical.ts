@@ -34,10 +34,11 @@ export interface Demographics {
 }
 
 export interface MedicalMetadata {
-    condition: string;
-    dr_level?: DrLevel;
-    image_quality_score: number;
-    privacy_score: number;
+    disease_type?: string;
+    severity?: string;
+    confidence_score: number;
+    flagged?: boolean;
+    rating?: number;
 }
 
 export interface PatientData {
