@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 import random
 import time
 from typing import List
+from .config import settings
 
 from fastapi import FastAPI, Depends, HTTPException, status, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -13,7 +14,6 @@ from slowapi.middleware import SlowAPIMiddleware
 
 from .config import settings
 from .models import (
-    HealthCheck,
     PatientData,
     SyntheticSample,
     AnalyticsMetrics,
@@ -72,33 +72,33 @@ async def login_for_access_token(
 async def health_check():
     return {"status": "healthy", "environment": settings.ENVIRONMENT}
 
+from fastapi.responses import StreamingResponse
+import json
+from .gan_simulator import gan_simulator
+
 @app.post(f"{settings.API_V1_STR}/generate", response_model=List[SyntheticSample], tags=["Core"])
 @limiter.limit("10/minute")
 async def generate_data(
     request: Request,
     patient_data: PatientData,
+    count: int = 1,
     current_user: User = Depends(get_current_active_user),
 ):
     """
-    Simulate GAN generation process.
+    Generate synthetic samples using the GAN Simulator.
     """
-    # Simulate processing time
-    time.sleep(1.5)
+    return gan_simulator.generate_samples(count, patient_data)
+
+@app.get(f"{settings.API_V1_STR}/train", tags=["Core"])
+async def train_model(current_user: User = Depends(get_current_active_user)):
+    """
+    Stream training progress metrics.
+    """
+    def event_generator():
+        for metrics in gan_simulator.train():
+            yield f"data: {metrics.model_dump_json()}\n\n"
     
-    # Mock generation logic
-    samples = []
-    for i in range(3):
-        samples.append(
-            SyntheticSample(
-                id=f"syn_{random.randint(1000, 9999)}",
-                timestamp=datetime.now(),
-                modality=patient_data.scan_type,
-                image_url=f"https://synthetic-storage.example.com/scans/{patient_data.scan_type.lower()}_{i}.png",
-                confidence_score=random.uniform(0.85, 0.99),
-                is_synthetic=True,
-            )
-        )
-    return samples
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 @app.get(f"{settings.API_V1_STR}/analytics", response_model=AnalyticsMetrics, tags=["Core"])
 async def get_analytics(current_user: User = Depends(get_current_active_user)):
@@ -108,5 +108,9 @@ async def get_analytics(current_user: User = Depends(get_current_active_user)):
         compute_usage_hours=124.5,
         accuracy_metrics={"fid_score": 12.4, "precision": 0.92, "recall": 0.89},
     )
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("backend.main:app", host="0.0.0.0", port=8000, reload=True)
 
 
