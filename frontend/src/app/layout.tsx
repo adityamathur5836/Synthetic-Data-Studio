@@ -18,6 +18,8 @@ export const metadata: Metadata = {
 };
 
 import Sidebar from "@/components/Sidebar";
+import Breadcrumbs from "@/components/Breadcrumbs";
+import PipelineStepper from "@/components/PipelineStepper";
 
 export default function RootLayout({
   children,
@@ -33,6 +35,8 @@ export default function RootLayout({
           <Sidebar />
           <main className="flex-1 ml-64 p-8">
             <div className="max-w-7xl mx-auto">
+              <Breadcrumbs />
+              <PipelineStepper />
               {children}
             </div>
           </main>

@@ -14,11 +14,12 @@ import {
 
 const navItems = [
   { name: 'Dashboard', href: '/', icon: Activity },
-  { name: 'Data Generation', href: '/generate', icon: BrainCircuit },
-  { name: 'Dataset Upload', href: '/upload', icon: UploadCloud },
-  { name: 'Analytics', href: '/analytics', icon: BarChart3 },
-  { name: 'Privacy Audit', href: '/privacy', icon: ShieldCheck },
-  { name: 'Settings', href: '/settings', icon: Settings },
+  { name: '1. Upload Dataset', href: '/upload', icon: UploadCloud },
+  { name: '2. Train GAN', href: '/train', icon: BrainCircuit },
+  { name: '3. Generate Data', href: '/generate', icon: Database },
+  { name: '4. Analyze Results', href: '/analyze', icon: BarChart3 },
+  { name: '5. Export Data', href: '/export', icon: ShieldCheck },
+  { name: 'Audit Trail', href: '/audit', icon: ShieldCheck },
 ];
 
 export default function Sidebar() {
