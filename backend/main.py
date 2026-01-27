@@ -76,6 +76,8 @@ from fastapi.responses import StreamingResponse
 import json
 from .gan_simulator import gan_simulator
 
+from .analytics_engine import analytics_engine
+
 @app.post(f"{settings.API_V1_STR}/generate", response_model=List[SyntheticSample], tags=["Core"])
 @limiter.limit("10/minute")
 async def generate_data(
@@ -87,7 +89,10 @@ async def generate_data(
     """
     Generate synthetic samples using the GAN Simulator.
     """
-    return gan_simulator.generate_samples(count, patient_data)
+    samples = gan_simulator.generate_samples(count, patient_data)
+    # Update analytics engine with new samples
+    analytics_engine.update_metrics(samples)
+    return samples
 
 @app.get(f"{settings.API_V1_STR}/train", tags=["Core"])
 async def train_model(current_user: User = Depends(get_current_active_user)):
@@ -102,12 +107,7 @@ async def train_model(current_user: User = Depends(get_current_active_user)):
 
 @app.get(f"{settings.API_V1_STR}/analytics", response_model=AnalyticsMetrics, tags=["Core"])
 async def get_analytics(current_user: User = Depends(get_current_active_user)):
-    return AnalyticsMetrics(
-        total_samples_generated=15420,
-        active_models=3,
-        compute_usage_hours=124.5,
-        accuracy_metrics={"fid_score": 12.4, "precision": 0.92, "recall": 0.89},
-    )
+    return analytics_engine.get_metrics()
 
 if __name__ == "__main__":
     import uvicorn

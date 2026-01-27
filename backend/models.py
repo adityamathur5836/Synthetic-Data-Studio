@@ -69,11 +69,28 @@ class SyntheticSample(BaseModel):
     medical_metadata: Optional[MedicalMetadata] = None
 
 # --- Analytics Models ---
+class PrivacyMetrics(BaseModel):
+    average_privacy_score: float
+    reidentification_risk_score: float
+
+class BiasMetrics(BaseModel):
+    gender_distribution: dict
+    ethnicity_distribution: dict
+    age_group_distribution: dict
+    condition_prevalence: dict
+
+class FidelityMetrics(BaseModel):
+    real_vs_synthetic_similarity: float
+    feature_correlation_matrix: dict
+
 class AnalyticsMetrics(BaseModel):
     total_samples_generated: int
     active_models: int
     compute_usage_hours: float
     accuracy_metrics: dict
+    privacy_metrics: Optional[PrivacyMetrics] = None
+    bias_metrics: Optional[BiasMetrics] = None
+    fidelity_metrics: Optional[FidelityMetrics] = None
 
 class TrainingMetrics(BaseModel):
     epoch: int
