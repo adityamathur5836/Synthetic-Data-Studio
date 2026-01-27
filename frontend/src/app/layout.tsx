@@ -17,6 +17,8 @@ export const metadata: Metadata = {
   description: "Medical AI Data Synthesis Platform",
 };
 
+import Sidebar from "@/components/Sidebar";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -25,9 +27,16 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-medical-bg`}
       >
-        {children}
+        <div className="flex min-h-screen">
+          <Sidebar />
+          <main className="flex-1 ml-64 p-8">
+            <div className="max-w-7xl mx-auto">
+              {children}
+            </div>
+          </main>
+        </div>
       </body>
     </html>
   );
