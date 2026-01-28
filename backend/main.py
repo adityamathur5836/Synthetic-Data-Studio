@@ -70,7 +70,30 @@ async def login_for_access_token(
 # --- Core Routes ---
 @app.get("/health", tags=["Health"])
 async def health_check():
-    return {"status": "healthy", "environment": settings.ENVIRONMENT}
+    import os
+    import shutil
+    
+    # Check disk space
+    total, used, free = shutil.disk_usage("/")
+    disk_healthy = (free / total) > 0.1 # At least 10% free
+    
+    # Check critical directories
+    upload_status = os.path.exists("uploads") and os.access("uploads", os.W_OK)
+    gen_status = os.path.exists("generated") and os.access("generated", os.W_OK)
+    
+    status = "healthy"
+    if not disk_healthy or not upload_status or not gen_status:
+        status = "degraded"
+        
+    return {
+        "status": status,
+        "environment": settings.ENVIRONMENT,
+        "disk_free_gb": round(free / (2**30), 2),
+        "writeable_dirs": {
+            "uploads": upload_status,
+            "generated": gen_status
+        }
+    }
 
 from fastapi.responses import StreamingResponse
 import json
