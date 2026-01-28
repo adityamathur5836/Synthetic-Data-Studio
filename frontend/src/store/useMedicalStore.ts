@@ -57,6 +57,29 @@ interface GalleryFilters {
     flaggedOnly: boolean;
 }
 
+interface TrainingRun {
+    id: string;
+    startTime: string;
+    endTime?: string;
+    parameters: PipelineConfig;
+    finalMetrics?: TrainingMetrics;
+    status: 'running' | 'completed' | 'failed' | 'stopped';
+}
+
+interface ResourceSnapshot {
+    timestamp: string;
+    usage: ResourceUsage;
+}
+
+interface Checkpoint {
+    id: string;
+    runId: string;
+    timestamp: string;
+    epoch: number;
+    metrics: TrainingMetrics;
+    path: string;
+}
+
 interface MedicalState {
     samples: SyntheticSample[];
     analytics: AnalyticsMetrics | null;
@@ -78,6 +101,12 @@ interface MedicalState {
     biasMetrics: BiasMetrics | null;
     mockAnalytics: any;
 
+    // Training Monitoring State
+    trainingHistory: TrainingRun[];
+    resourceHistory: ResourceSnapshot[];
+    checkpoints: Checkpoint[];
+    trainingLogs: string[];
+
     setSamples: (samples: SyntheticSample[]) => void;
     updateSample: (id: string, updates: Partial<SyntheticSample>) => void;
     addSamples: (samples: SyntheticSample[]) => void;
@@ -93,6 +122,9 @@ interface MedicalState {
     setGalleryFilters: (filters: Partial<GalleryFilters>) => void;
     setBiasMetrics: (metrics: BiasMetrics) => void;
     applyMitigation: (suggestionId: string) => void;
+    addTrainingLog: (log: string) => void;
+    addResourceSnapshot: (usage: ResourceUsage) => void;
+    addCheckpoint: (checkpoint: Checkpoint) => void;
     resetPipeline: () => void;
 }
 
@@ -169,6 +201,10 @@ export const useMedicalStore = create<MedicalState>()(
                     ]
                 }
             },
+            trainingHistory: [],
+            resourceHistory: [],
+            checkpoints: [],
+            trainingLogs: [],
 
             setSamples: (samples: SyntheticSample[]) => set({ samples }),
             updateSample: (id: string, updates: Partial<SyntheticSample>) => set((state: MedicalState) => ({
@@ -219,6 +255,18 @@ export const useMedicalStore = create<MedicalState>()(
                     ]
                 }));
             },
+            addTrainingLog: (log: string) => set((state) => ({
+                trainingLogs: [...state.trainingLogs, log].slice(-500) // Keep last 500 logs
+            })),
+            addResourceSnapshot: (usage: ResourceUsage) => set((state) => ({
+                resourceHistory: [...state.resourceHistory, {
+                    timestamp: new Date().toISOString(),
+                    usage
+                }].slice(-100) // Keep last 100 snapshots
+            })),
+            addCheckpoint: (checkpoint: Checkpoint) => set((state) => ({
+                checkpoints: [checkpoint, ...state.checkpoints]
+            })),
             resetPipeline: () => set({
                 trainingProgress: null,
                 isTraining: false,
@@ -227,7 +275,10 @@ export const useMedicalStore = create<MedicalState>()(
                 resourceUsage: defaultResourceUsage,
                 samples: [],
                 galleryFilters: defaultGalleryFilters,
-                biasMetrics: null
+                biasMetrics: null,
+                trainingLogs: [],
+                resourceHistory: [],
+                checkpoints: []
             })
         }),
         {
