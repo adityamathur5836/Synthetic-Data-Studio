@@ -20,6 +20,7 @@ const navItems = [
   { name: '4. Analyze Results', href: '/analyze', icon: BarChart3 },
   { name: '5. Export Data', href: '/export', icon: ShieldCheck },
   { name: 'Audit Trail', href: '/audit', icon: ShieldCheck },
+  { name: 'System Health', href: '/settings/health', icon: Activity },
 ];
 
 export default function Sidebar() {
@@ -59,8 +60,8 @@ export default function Sidebar() {
       </div>
       
       <div className="mt-auto p-6 border-t border-slate-100">
-        <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
-          <p className="text-xs font-semibold text-medical-muted uppercase tracking-wider mb-2">Systems Status</p>
+        <Link href="/settings/health" className="p-4 rounded-xl bg-slate-50 border border-slate-200 block group hover:border-medical-accent transition-all">
+          <p className="text-xs font-semibold text-medical-muted uppercase tracking-wider mb-2 group-hover:text-medical-accent">Systems Status</p>
           <div className="flex items-center gap-2">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-medical-success opacity-75"></span>
@@ -68,7 +69,7 @@ export default function Sidebar() {
             </span>
             <span className="text-xs font-medium text-medical-text">All nodes online</span>
           </div>
-        </div>
+        </Link>
       </div>
     </aside>
   );

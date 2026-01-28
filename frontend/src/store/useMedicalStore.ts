@@ -112,6 +112,32 @@ interface APIKey {
     status: 'active' | 'revoked';
 }
 
+export type HealthStatus = 'healthy' | 'degraded' | 'down' | 'maintenance';
+
+interface SystemComponentStatus {
+    id: string;
+    name: string;
+    status: HealthStatus;
+    latency?: number;
+    lastChecked: string;
+    message?: string;
+}
+
+interface SystemHealthStatus {
+    overall: HealthStatus;
+    components: SystemComponentStatus[];
+}
+
+interface SystemAlert {
+    id: string;
+    priority: 'critical' | 'warning' | 'info';
+    title: string;
+    message: string;
+    timestamp: string;
+    isAcknowledged: boolean;
+    componentId?: string;
+}
+
 interface MedicalState {
     samples: SyntheticSample[];
     analytics: AnalyticsMetrics | null;
@@ -144,6 +170,11 @@ interface MedicalState {
     apiKeys: APIKey[];
     exportQueue: ExportTask[];
 
+    // System Health State
+    systemHealth: SystemHealthStatus;
+    activeAlerts: SystemAlert[];
+    uptimeHistory: { timestamp: string; score: number }[];
+
     setSamples: (samples: SyntheticSample[]) => void;
     updateSample: (id: string, updates: Partial<SyntheticSample>) => void;
     addSamples: (samples: SyntheticSample[]) => void;
@@ -169,6 +200,11 @@ interface MedicalState {
     addDatasetVersion: (version: DatasetVersion) => void;
     addAPIKey: (key: APIKey) => void;
     revokeAPIKey: (id: string) => void;
+
+    // Health Actions
+    setComponentStatus: (componentId: string, status: HealthStatus, latency?: number) => void;
+    addSystemAlert: (alert: Omit<SystemAlert, 'id' | 'isAcknowledged' | 'timestamp'>) => void;
+    acknowledgeAlert: (alertId: string) => void;
 
     resetPipeline: () => void;
 }
@@ -253,6 +289,20 @@ export const useMedicalStore = create<MedicalState>()(
             datasetVersions: [],
             apiKeys: [],
             exportQueue: [],
+            systemHealth: {
+                overall: 'healthy',
+                components: [
+                    { id: 'api-gateway', name: 'API Gateway', status: 'healthy', latency: 42, lastChecked: new Date().toISOString() },
+                    { id: 'gpu-cluster', name: 'GPU Training Cluster', status: 'healthy', latency: 156, lastChecked: new Date().toISOString() },
+                    { id: 'vector-db', name: 'Vector Database', status: 'healthy', latency: 12, lastChecked: new Date().toISOString() },
+                    { id: 'clinical-storage', name: 'Clinical Blob Storage', status: 'healthy', lastChecked: new Date().toISOString() },
+                ]
+            },
+            activeAlerts: [],
+            uptimeHistory: Array.from({ length: 30 }, (_, i) => ({
+                timestamp: new Date(Date.now() - (30 - i) * 86400000).toISOString(),
+                score: 99.5 + Math.random() * 0.5
+            })),
 
             setSamples: (samples: SyntheticSample[]) => set({ samples }),
             updateSample: (id: string, updates: Partial<SyntheticSample>) => set((state: MedicalState) => ({
@@ -330,6 +380,28 @@ export const useMedicalStore = create<MedicalState>()(
             revokeAPIKey: (id: string) => set((state) => ({
                 apiKeys: state.apiKeys.map(k => k.id === id ? { ...k, status: 'revoked' } : k)
             })),
+            setComponentStatus: (componentId, status, latency) => set((state) => ({
+                systemHealth: {
+                    ...state.systemHealth,
+                    components: state.systemHealth.components.map(c =>
+                        c.id === componentId ? { ...c, status, latency, lastChecked: new Date().toISOString() } : c
+                    )
+                }
+            })),
+            addSystemAlert: (alert) => set((state) => ({
+                activeAlerts: [
+                    {
+                        ...alert,
+                        id: Math.random().toString(36).substring(2, 9),
+                        timestamp: new Date().toISOString(),
+                        isAcknowledged: false
+                    },
+                    ...state.activeAlerts
+                ]
+            })),
+            acknowledgeAlert: (alertId) => set((state) => ({
+                activeAlerts: state.activeAlerts.map(a => a.id === alertId ? { ...a, isAcknowledged: true } : a)
+            })),
             resetPipeline: () => set({
                 trainingProgress: null,
                 isTraining: false,
@@ -344,7 +416,8 @@ export const useMedicalStore = create<MedicalState>()(
                 checkpoints: [],
                 exportQueue: [],
                 datasetVersions: [],
-                apiKeys: []
+                apiKeys: [],
+                activeAlerts: []
             })
         }),
         {
