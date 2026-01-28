@@ -112,10 +112,4 @@ MedSynth is highly optimized for the **M3 MacBook Pro (8GB RAM)**:
 
 ---
 
-## 📄 License
-MedSynth is released under the **MIT License**.
 
----
-
-## 🤝 Contact & Contribution
-Built for **IIT Ropar** research initiatives. For institutional access or contributions, please contact the project maintainers.
