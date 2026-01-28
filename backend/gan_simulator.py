@@ -37,12 +37,12 @@ class GANSimulator:
             progress = i / self.max_epochs
             
             # Simulate realistic training noise and convergence
-            noise = random.uniform(-0.05, 0.05)
-            generator_loss = max(0.1, gen_loss_start * (math.exp(-3 * progress)) + noise)
-            discriminator_loss = disc_loss_start + (0.2 * progress) + noise
+            noise = random.uniform(-0.02, 0.02)
+            generator_loss = max(0.1, gen_loss_start * (math.exp(-2 * progress)) + noise)
+            discriminator_loss = disc_loss_start + (0.15 * progress) + noise
             
             # Accuracy improves over time
-            accuracy = 0.5 + (0.45 * (1 - math.exp(-5 * progress))) + random.uniform(-0.02, 0.02)
+            accuracy = 0.5 + (0.48 * (1 - math.exp(-4 * progress))) + random.uniform(-0.01, 0.01)
             accuracy = min(0.99, max(0.5, accuracy))
             
             yield TrainingMetrics(
@@ -53,10 +53,9 @@ class GANSimulator:
                 generator_loss=generator_loss
             )
             
-            # Simulate processing time per epoch (slower in low resource mode to reduce CPU spike)
-            sleep_time = 0.05 if i < 10 else 0.1
-            if settings.LOW_RESOURCE_MODE:
-                sleep_time *= 2
+            # Slow down to make it feel more "medical grade"
+            # 1 second per epoch in low resource mode
+            sleep_time = 0.5 if not settings.LOW_RESOURCE_MODE else 1.0
             time.sleep(sleep_time)
 
     def generate_samples(self, count: int, patient_request: PatientData = None) -> List[SyntheticSample]:

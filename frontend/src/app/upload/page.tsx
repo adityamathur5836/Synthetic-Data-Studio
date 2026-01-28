@@ -1,10 +1,12 @@
+"use client";
+
 import { useRef, useState } from 'react';
 import { UploadCloud, FileText, CheckCircle2, Loader2, AlertCircle, X } from 'lucide-react';
 import { useMedicalStore } from '@/store/useMedicalStore';
 import { medicalApi } from '@/services/api';
 
 export default function UploadPage() {
-  const { addAuditLog } = useMedicalStore();
+  const { addAuditLog, token, setAuthModalOpen, setActiveDataset } = useMedicalStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'success' | 'error'>('idle');
@@ -32,11 +34,29 @@ export default function UploadPage() {
   const triggerUpload = async () => {
     if (selectedFiles.length === 0) return;
     
+    if (!token) {
+        setAuthModalOpen(true);
+        return;
+    }
+    
     setIsUploading(true);
     setUploadStatus('idle');
     
     try {
       const response = await medicalApi.uploadDataset(selectedFiles);
+      
+      // Update store with the new active dataset
+      setActiveDataset({
+        id: response.task_id,
+        name: `Retina_Batch_${new Date().toLocaleDateString()}`,
+        type: 'Medical Image (Retina)',
+        file_count: selectedFiles.length,
+        total_size_bytes: selectedFiles.reduce((acc, f) => acc + f.size, 0),
+        upload_date: new Date().toISOString(),
+        status: 'completed' as any, // ProcessingStatus.COMPLETED
+        processed_count: selectedFiles.length
+      });
+
       addAuditLog("Dataset Upload Completed", `Uploaded ${selectedFiles.length} files. Task ID: ${response.task_id}`);
       setUploadStatus('success');
       setSelectedFiles([]);

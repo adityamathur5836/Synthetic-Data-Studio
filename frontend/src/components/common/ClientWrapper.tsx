@@ -10,6 +10,7 @@ import { HelpCircle, Loader2 } from "lucide-react";
 import { useMedicalStore } from "@/store/useMedicalStore";
 import ErrorBoundary from "@/components/common/ErrorBoundary";
 import ServiceWorkerRegistration from "@/components/common/ServiceWorkerRegistration";
+import LoginModal from "@/components/auth/LoginModal";
 import { Suspense } from "react";
 
 interface ClientWrapperProps {
@@ -22,6 +23,7 @@ export default function ClientWrapper({ children }: ClientWrapperProps) {
   return (
     <ErrorBoundary>
       <ServiceWorkerRegistration />
+      <LoginModal />
       <div className="flex min-h-screen">
         <Sidebar />
         <main className="flex-1 ml-64 p-8" role="main">

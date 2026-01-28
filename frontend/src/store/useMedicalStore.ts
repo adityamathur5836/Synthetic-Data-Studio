@@ -6,6 +6,7 @@ import {
     TrainingMetrics,
     Dataset
 } from '@/types/medical';
+import { medicalApi } from '@/services/api';
 
 interface AuditLog {
     id: string;
@@ -216,6 +217,17 @@ interface MedicalState {
     setTutorialStep: (step: number | null) => void;
 
     resetPipeline: () => void;
+
+    // Auth State
+    token: string | null;
+    user: {
+        username: string;
+        role: string;
+    } | null;
+    isAuthModalOpen: boolean;
+    setAuth: (token: string, user: { username: string; role: string }) => void;
+    setAuthModalOpen: (isOpen: boolean) => void;
+    logout: () => void;
 }
 
 const defaultPipelineConfig: PipelineConfig = {
@@ -273,6 +285,21 @@ export const useMedicalStore = create<MedicalState>()(
             isHelpTrayOpen: false,
             tutorialStep: null,
 
+            // Auth Initial State
+            token: null,
+            user: null,
+            isAuthModalOpen: false,
+
+            setAuth: (token, user) => {
+                medicalApi.setAuthToken(token);
+                set({ token, user, isAuthModalOpen: false });
+            },
+            setAuthModalOpen: (isAuthModalOpen) => set({ isAuthModalOpen }),
+            logout: () => {
+                medicalApi.setAuthToken(null);
+                set({ token: null, user: null, isAuthModalOpen: true });
+            },
+
             setSamples: (samples: SyntheticSample[]) => set({ samples }),
             updateSample: (id: string, updates: Partial<SyntheticSample>) => set((state: MedicalState) => ({
                 samples: state.samples.map(s => s.id === id ? { ...s, ...updates } : s)
@@ -316,7 +343,7 @@ export const useMedicalStore = create<MedicalState>()(
                             timestamp: new Date().toISOString(),
                             user: "Researcher Alpha",
                             action: "Bias Mitigation Applied",
-                            details: `Suggestion applied: ${suggestionId}`
+                            details: `Suggestion applied: ${suggestionId} `
                         },
                         ...state.auditLogs
                     ]
@@ -405,7 +432,9 @@ export const useMedicalStore = create<MedicalState>()(
                 pipelineConfig: state.pipelineConfig,
                 auditLogs: state.auditLogs,
                 currentStep: state.currentStep,
-                galleryFilters: state.galleryFilters
+                galleryFilters: state.galleryFilters,
+                token: state.token,
+                user: state.user
             }),
         }
     )

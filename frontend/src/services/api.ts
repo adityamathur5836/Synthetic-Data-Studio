@@ -16,10 +16,67 @@ const apiClient = axios.create({
     },
 });
 
+// Initialize token from localStorage if it exists (for session restoration)
+let authToken: string | null = null;
+if (typeof window !== 'undefined') {
+    const persisted = localStorage.getItem('medical-storage');
+    if (persisted) {
+        try {
+            const { state } = JSON.parse(persisted);
+            authToken = state.token || null;
+            if (authToken) {
+                apiClient.defaults.headers.common['Authorization'] = `Bearer ${authToken}`;
+            }
+        } catch (e) {
+            console.error('Failed to restore auth token:', e);
+        }
+    }
+}
+
+// Auth Interceptors
+apiClient.interceptors.request.use((config) => {
+    if (authToken && config.headers) {
+        config.headers.Authorization = `Bearer ${authToken}`;
+    }
+    return config;
+});
+
+apiClient.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.response?.status === 401) {
+            // We still need to trigger the modal, so we'll use a globally available trigger
+            // since we can't import the store directly here to avoid circularity.
+            if (typeof window !== 'undefined') {
+                window.dispatchEvent(new CustomEvent('auth-unauthorized'));
+            }
+        }
+        return Promise.reject(error);
+    }
+);
+
 export const medicalApi = {
-    // Authentication placeholder (if needed later)
-    setAuthToken: (token: string) => {
-        apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    // Authentication
+    login: async (username: string, password: string): Promise<{ access_token: string; token_type: string }> => {
+        const params = new URLSearchParams();
+        params.append('username', username);
+        params.append('password', password);
+
+        const response = await apiClient.post('/auth/login', params, {
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            }
+        });
+        return response.data;
+    },
+
+    setAuthToken: (token: string | null) => {
+        authToken = token;
+        if (token) {
+            apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        } else {
+            delete apiClient.defaults.headers.common['Authorization'];
+        }
     },
 
     // Core Endpoints

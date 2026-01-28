@@ -11,11 +11,50 @@ import TrainingLossChart from './TrainingLossChart';
 import ResourceMonitor from './ResourceMonitor';
 import CheckpointBrowser from './CheckpointBrowser';
 import TrainingLogViewer from './TrainingLogViewer';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { medicalApi } from '@/services/api';
 
 export default function TrainingDashboard() {
-  const { isTraining, setTraining, pipelineConfig, setPipelineConfig, trainingProgress } = useMedicalStore();
+  const { 
+    isTraining, setTraining, 
+    pipelineConfig, setPipelineConfig, 
+    trainingProgress, activeDataset,
+    addTrainingMetrics, token
+  } = useMedicalStore();
   const [activeTab, setActiveTab] = useState<'metrics' | 'checkpoints' | 'history'>('metrics');
+  const eventSourceRef = useRef<EventSource | null>(null);
+
+  useEffect(() => {
+    if (isTraining && token) {
+      const url = `${medicalApi.getTrainingStreamUrl()}?access_token=${token}`;
+      const es = new EventSource(url);
+      eventSourceRef.current = es;
+
+      es.onmessage = (event) => {
+        try {
+          const metrics = JSON.parse(event.data);
+          addTrainingMetrics(metrics);
+        } catch (err) {
+          console.error('Error parsing training metrics:', err);
+        }
+      };
+
+      es.onerror = (err) => {
+        console.error('EventSource failed:', err);
+        es.close();
+        setTraining(false);
+      };
+
+      return () => {
+        es.close();
+      };
+    } else {
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+        eventSourceRef.current = null;
+      }
+    }
+  }, [isTraining, token, addTrainingMetrics, setTraining]);
 
   const stats = [
     { label: 'Current Epoch', value: trainingProgress?.epoch.toString() || '0', sub: `/ ${pipelineConfig.batchSize * 10 || 1000}` },
@@ -34,28 +73,40 @@ export default function TrainingDashboard() {
            <div>
               <h2 className="text-xl font-bold text-slate-900 tracking-tight">Active Training Sandbox</h2>
               <div className="flex items-center gap-2 mt-0.5">
-                 <span className="text-xs font-bold text-slate-400">Current Model: medical-gan-v2-320px</span>
+                 <span className="text-xs font-bold text-slate-400">
+                    Source: <span className={activeDataset ? 'text-slate-600' : 'text-rose-500'}>
+                        {activeDataset ? activeDataset.name : 'No dataset selected'}
+                    </span>
+                 </span>
                  <div className="w-1 h-1 rounded-full bg-slate-300" />
-                 <span className="text-xs font-bold text-medical-accent">High-Fidelity Mode</span>
+                 <span className="text-xs font-bold text-medical-accent">{activeDataset ? `${activeDataset.file_count} samples` : '0 samples'}</span>
               </div>
            </div>
         </div>
 
         <div className="flex items-center gap-2 bg-slate-100 p-1.5 rounded-2xl">
-           <button 
-             onClick={() => setTraining(!isTraining)}
-             className={`flex items-center gap-2 px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
-               isTraining 
-                 ? 'bg-amber-100 text-amber-700 hover:bg-amber-200' 
-                 : 'bg-slate-900 text-white hover:bg-black shadow-lg shadow-slate-200'
-             }`}
-           >
-             {isTraining ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
-             {isTraining ? 'Pause Run' : 'Resume Training'}
-           </button>
-           <button className="flex items-center gap-2 px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest text-rose-600 hover:bg-rose-50 transition-all">
+            <button 
+              onClick={() => setTraining(!isTraining)}
+              disabled={!activeDataset && !isTraining}
+              title={!activeDataset ? 'Please upload a dataset first' : ''}
+              className={`flex items-center gap-2 px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
+                isTraining 
+                  ? 'bg-amber-100 text-amber-700 hover:bg-amber-200' 
+                  : !activeDataset 
+                    ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                    : 'bg-slate-900 text-white hover:bg-black shadow-lg shadow-slate-200'
+              }`}
+            >
+              {isTraining ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+              {isTraining ? 'Pause Run' : 'Resume Training'}
+            </button>
+            <button 
+              onClick={() => setTraining(false)}
+              disabled={!isTraining}
+              className="flex items-center gap-2 px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest text-rose-600 hover:bg-rose-50 disabled:text-slate-300 disabled:hover:bg-transparent transition-all"
+            >
               <StopCircle className="w-3.5 h-3.5" /> Stop
-           </button>
+            </button>
         </div>
       </div>
 
@@ -129,17 +180,29 @@ export default function TrainingDashboard() {
                  <div className="space-y-2">
                     <div className="flex justify-between">
                        <label className="text-xs font-bold text-slate-500">Early Stopping (FID)</label>
-                       <span className="text-xs font-black text-slate-900">10.0</span>
+                       <span className="text-xs font-black text-slate-900">{pipelineConfig.noiseLevel > 0.1 ? '15.0' : '10.0'}</span>
                     </div>
-                    <input type="range" className="w-full h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-medical-accent" />
+                    <input 
+                       type="range" 
+                       min="0" max="0.2" step="0.01"
+                       value={pipelineConfig.noiseLevel}
+                       onChange={(e) => setPipelineConfig({ noiseLevel: parseFloat(e.target.value) })}
+                       className="w-full h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-medical-accent" 
+                    />
                  </div>
                  
                  <div className="space-y-2">
                     <div className="flex justify-between">
-                       <label className="text-xs font-bold text-slate-500">Learning Rate (Generator)</label>
-                       <span className="text-xs font-black text-slate-900">1e-4</span>
+                       <label className="text-xs font-bold text-slate-500">Batch Size</label>
+                       <span className="text-xs font-black text-slate-900">{pipelineConfig.batchSize}</span>
                     </div>
-                    <input type="range" className="w-full h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-medical-accent" />
+                    <input 
+                       type="range" 
+                       min="16" max="128" step="16"
+                       value={pipelineConfig.batchSize}
+                       onChange={(e) => setPipelineConfig({ batchSize: parseInt(e.target.value) })}
+                       className="w-full h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-medical-accent" 
+                    />
                  </div>
 
                  <div className="pt-4 border-t border-slate-100 space-y-3">
