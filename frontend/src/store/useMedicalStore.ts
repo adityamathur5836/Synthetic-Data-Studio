@@ -80,6 +80,38 @@ interface Checkpoint {
     path: string;
 }
 
+export type ExportFormat = 'DICOM' | 'NIfTI' | 'PNG' | 'CSV' | 'JSON' | 'PARQUET';
+
+interface ExportTask {
+    id: string;
+    format: ExportFormat;
+    status: 'pending' | 'processing' | 'completed' | 'failed';
+    progress: number;
+    downloadUrl?: string;
+    timestamp: string;
+    fileCount: number;
+}
+
+interface DatasetVersion {
+    id: string;
+    version: string;
+    timestamp: string;
+    samplesCount: number;
+    fidelityScore: number;
+    biasScore: number;
+    changelog: string;
+    author: string;
+}
+
+interface APIKey {
+    id: string;
+    name: string;
+    key: string;
+    created: string;
+    lastUsed?: string;
+    status: 'active' | 'revoked';
+}
+
 interface MedicalState {
     samples: SyntheticSample[];
     analytics: AnalyticsMetrics | null;
@@ -107,6 +139,11 @@ interface MedicalState {
     checkpoints: Checkpoint[];
     trainingLogs: string[];
 
+    // Export & Integration State
+    datasetVersions: DatasetVersion[];
+    apiKeys: APIKey[];
+    exportQueue: ExportTask[];
+
     setSamples: (samples: SyntheticSample[]) => void;
     updateSample: (id: string, updates: Partial<SyntheticSample>) => void;
     addSamples: (samples: SyntheticSample[]) => void;
@@ -125,6 +162,14 @@ interface MedicalState {
     addTrainingLog: (log: string) => void;
     addResourceSnapshot: (usage: ResourceUsage) => void;
     addCheckpoint: (checkpoint: Checkpoint) => void;
+
+    // Export Actions
+    addExportTask: (task: ExportTask) => void;
+    updateExportTask: (id: string, updates: Partial<ExportTask>) => void;
+    addDatasetVersion: (version: DatasetVersion) => void;
+    addAPIKey: (key: APIKey) => void;
+    revokeAPIKey: (id: string) => void;
+
     resetPipeline: () => void;
 }
 
@@ -205,6 +250,9 @@ export const useMedicalStore = create<MedicalState>()(
             resourceHistory: [],
             checkpoints: [],
             trainingLogs: [],
+            datasetVersions: [],
+            apiKeys: [],
+            exportQueue: [],
 
             setSamples: (samples: SyntheticSample[]) => set({ samples }),
             updateSample: (id: string, updates: Partial<SyntheticSample>) => set((state: MedicalState) => ({
@@ -267,6 +315,21 @@ export const useMedicalStore = create<MedicalState>()(
             addCheckpoint: (checkpoint: Checkpoint) => set((state) => ({
                 checkpoints: [checkpoint, ...state.checkpoints]
             })),
+            addExportTask: (task: ExportTask) => set((state) => ({
+                exportQueue: [task, ...state.exportQueue]
+            })),
+            updateExportTask: (id: string, updates: Partial<ExportTask>) => set((state) => ({
+                exportQueue: state.exportQueue.map(t => t.id === id ? { ...t, ...updates } : t)
+            })),
+            addDatasetVersion: (version: DatasetVersion) => set((state) => ({
+                datasetVersions: [version, ...state.datasetVersions]
+            })),
+            addAPIKey: (apiKey: APIKey) => set((state) => ({
+                apiKeys: [apiKey, ...state.apiKeys]
+            })),
+            revokeAPIKey: (id: string) => set((state) => ({
+                apiKeys: state.apiKeys.map(k => k.id === id ? { ...k, status: 'revoked' } : k)
+            })),
             resetPipeline: () => set({
                 trainingProgress: null,
                 isTraining: false,
@@ -278,7 +341,10 @@ export const useMedicalStore = create<MedicalState>()(
                 biasMetrics: null,
                 trainingLogs: [],
                 resourceHistory: [],
-                checkpoints: []
+                checkpoints: [],
+                exportQueue: [],
+                datasetVersions: [],
+                apiKeys: []
             })
         }),
         {
