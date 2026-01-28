@@ -14,14 +14,14 @@ import TrainingLogViewer from './TrainingLogViewer';
 import { useState } from 'react';
 
 export default function TrainingDashboard() {
-  const { isTraining, setTraining, pipelineConfig, setPipelineConfig } = useMedicalStore();
+  const { isTraining, setTraining, pipelineConfig, setPipelineConfig, trainingProgress } = useMedicalStore();
   const [activeTab, setActiveTab] = useState<'metrics' | 'checkpoints' | 'history'>('metrics');
 
   const stats = [
-    { label: 'Current Epoch', value: '450', sub: '/ 1000' },
-    { label: 'Avg FID Score', value: '12.4', sub: '↘ 4.2' },
-    { label: 'Elapsed Time', value: '08:42:15', sub: 'Est: 11h' },
-    { label: 'Training Mode', value: 'Stable', sub: 'LR: 1e-4' },
+    { label: 'Current Epoch', value: trainingProgress?.epoch.toString() || '0', sub: `/ ${pipelineConfig.batchSize * 10 || 1000}` },
+    { label: 'Loss (G / D)', value: trainingProgress ? `${trainingProgress.generator_loss.toFixed(3)} / ${trainingProgress.discriminator_loss.toFixed(3)}` : '0.000', sub: 'Active' },
+    { label: 'Similarity Score', value: trainingProgress ? (trainingProgress.accuracy * 100).toFixed(1) : '0.0', sub: '%' },
+    { label: 'Training Mode', value: isTraining ? 'Active' : 'Standby', sub: pipelineConfig.noiseLevel > 0.05 ? 'High Entropy' : 'Stable' },
   ];
 
   return (

@@ -6,32 +6,19 @@ import { Save, ExternalLink, Trash2, CheckCircle2 } from 'lucide-react';
 export default function CheckpointBrowser() {
   const { checkpoints } = useMedicalStore();
 
-  const mockCheckpoints = [
-    {
-      id: 'cp-12',
-      epoch: 450,
-      timestamp: '2024-01-28 08:30',
-      fid: 12.4,
-      isBest: true,
-      path: '/weights/gan_e450_best.pt'
-    },
-    {
-      id: 'cp-11',
-      epoch: 400,
-      timestamp: '2024-01-28 07:15',
-      fid: 14.8,
-      isBest: false,
-      path: '/weights/gan_e400.pt'
-    },
-    {
-      id: 'cp-10',
-      epoch: 350,
-      timestamp: '2024-01-28 06:00',
-      fid: 18.2,
-      isBest: false,
-      path: '/weights/gan_e350.pt'
-    }
-  ];
+  if (checkpoints.length === 0) {
+    return (
+      <div className="h-full flex flex-col items-center justify-center p-12 text-center space-y-4">
+        <div className="p-4 bg-slate-50 rounded-full">
+          <Save className="w-8 h-8 text-slate-300" />
+        </div>
+        <div>
+          <p className="text-sm font-bold text-slate-900">No Checkpoints Yet</p>
+          <p className="text-xs text-slate-500 mt-1">Model weights are automatically saved every 50 epochs during active training.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -41,7 +28,7 @@ export default function CheckpointBrowser() {
       </div>
 
       <div className="space-y-3">
-        {(checkpoints.length > 0 ? checkpoints : mockCheckpoints).map((cp) => (
+        {checkpoints.map((cp) => (
           <div 
             key={cp.id}
             className={`group p-4 rounded-3xl border transition-all ${
@@ -74,8 +61,8 @@ export default function CheckpointBrowser() {
                     <p className={`text-sm font-bold ${cp.isBest ? 'text-emerald-600' : 'text-slate-900'}`}>{cp.fid}</p>
                   </div>
                   <div>
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Inception</p>
-                    <p className="text-sm font-bold text-slate-900">4.21</p>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Metric</p>
+                    <p className="text-sm font-bold text-slate-900">{cp.metrics.accuracy.toFixed(3)}</p>
                   </div>
                </div>
                
@@ -93,7 +80,7 @@ export default function CheckpointBrowser() {
       </div>
 
       <button className="w-full py-3 bg-white border border-slate-200 text-slate-600 rounded-2xl font-bold text-xs hover:bg-slate-50 transition-all">
-        View All 24 Saved Models
+        View All {checkpoints.length} Saved Models
       </button>
     </div>
   );

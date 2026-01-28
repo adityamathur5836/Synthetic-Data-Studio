@@ -26,14 +26,15 @@ ChartJS.register(
 );
 
 export default function TrainingLossChart() {
-  const { trainingHistory } = useMedicalStore();
+  const { epochHistory } = useMedicalStore();
 
-  // Mock data for demonstration if no history exists
-  const mockData = useMemo(() => {
-    const labels = Array.from({ length: 20 }, (_, i) => `Epoch ${i + 1}`);
-    const gLoss = Array.from({ length: 20 }, () => Math.random() * 0.5 + 0.1);
-    const dLoss = Array.from({ length: 20 }, () => Math.random() * 0.3 + 0.05);
-    const accuracy = Array.from({ length: 20 }, (_, i) => 0.6 + (i * 0.015) + (Math.random() * 0.05));
+  const chartData = useMemo(() => {
+    if (epochHistory.length === 0) return null;
+
+    const labels = epochHistory.map(m => `Epoch ${m.epoch}`);
+    const gLoss = epochHistory.map(m => m.generator_loss);
+    const dLoss = epochHistory.map(m => m.discriminator_loss);
+    const accuracy = epochHistory.map(m => m.accuracy);
 
     return {
       labels,
@@ -65,9 +66,24 @@ export default function TrainingLossChart() {
         },
       ],
     };
-  }, []);
+  }, [epochHistory]);
+
+  if (!chartData) {
+    return (
+      <div className="h-full flex flex-col items-center justify-center p-12 text-center space-y-4">
+        <div className="p-4 bg-slate-50 rounded-full">
+          <Activity className="w-8 h-8 text-slate-300" />
+        </div>
+        <div>
+          <p className="text-sm font-bold text-slate-900">Awaiting Training Telemetry</p>
+          <p className="text-xs text-slate-500 mt-1">Start the GAN simulator to begin receiving real-time performance metrics.</p>
+        </div>
+      </div>
+    );
+  }
 
   const options: ChartOptions<'line'> = {
+    // ... existing options ...
     responsive: true,
     maintainAspectRatio: false,
     interaction: {
@@ -108,7 +124,8 @@ export default function TrainingLossChart() {
           display: false
         },
         ticks: {
-          font: { size: 10 }
+          font: { size: 10 },
+          maxTicksLimit: 10
         }
       }
     },
@@ -134,7 +151,9 @@ export default function TrainingLossChart() {
 
   return (
     <div className="h-full w-full min-h-[350px]">
-      <Line data={mockData} options={options} />
+      <Line data={chartData} options={options} />
     </div>
   );
 }
+
+import { Activity } from 'lucide-react';

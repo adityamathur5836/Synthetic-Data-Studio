@@ -17,7 +17,7 @@ This is the FastAPI backend for SyntheticData Studio.
 
 3.  **Run the server**:
     ```bash
-    python main.py
+    python3 main.py
     ```
 
     The API will be available at `http://localhost:8000`.

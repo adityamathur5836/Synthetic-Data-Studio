@@ -159,10 +159,10 @@ interface MedicalState {
 
     // Analytics & Bias State
     biasMetrics: BiasMetrics | null;
-    mockAnalytics: any;
 
     // Training Monitoring State
     trainingHistory: TrainingRun[];
+    epochHistory: TrainingMetrics[];
     resourceHistory: ResourceSnapshot[];
     checkpoints: Checkpoint[];
     trainingLogs: string[];
@@ -195,6 +195,7 @@ interface MedicalState {
     addTrainingLog: (log: string) => void;
     addResourceSnapshot: (usage: ResourceUsage) => void;
     addCheckpoint: (checkpoint: Checkpoint) => void;
+    addTrainingMetrics: (metrics: TrainingMetrics) => void;
 
     // Export Actions
     addExportTask: (task: ExportTask) => void;
@@ -255,42 +256,8 @@ export const useMedicalStore = create<MedicalState>()(
             resourceUsage: defaultResourceUsage,
             galleryFilters: defaultGalleryFilters,
             biasMetrics: null,
-            mockAnalytics: {
-                demographics: {
-                    age: {
-                        labels: ['18-25', '26-40', '41-60', '61-80', '80+'],
-                        real: [12, 34, 45, 28, 11],
-                        synthetic: [14, 32, 44, 30, 10]
-                    },
-                    gender: {
-                        labels: ['Male', 'Female', 'Other'],
-                        real: [48, 51, 1],
-                        synthetic: [47, 52, 1]
-                    }
-                },
-                prevalence: [
-                    { x: '18-35', y: 'Mild', value: 0.12 },
-                    { x: '36-55', y: 'Mild', value: 0.24 },
-                    { x: '56+', y: 'Mild', value: 0.18 },
-                    { x: '18-35', y: 'Moderate', value: 0.08 },
-                    { x: '36-55', y: 'Moderate', value: 0.45 },
-                    { x: '56+', y: 'Moderate', value: 0.62 },
-                    { x: '18-35', y: 'Severe', value: 0.02 },
-                    { x: '36-55', y: 'Severe', value: 0.15 },
-                    { x: '56+', y: 'Severe', value: 0.85 }
-                ],
-                correlation: {
-                    attributes: ['Age', 'Severity', 'B-Pressure', 'BMI', 'Glucose'],
-                    matrix: [
-                        [1.00, 0.65, 0.42, 0.21, 0.38],
-                        [0.65, 1.00, 0.58, 0.34, 0.72],
-                        [0.42, 0.58, 1.00, 0.12, 0.25],
-                        [0.21, 0.34, 0.12, 1.00, 0.44],
-                        [0.38, 0.72, 0.25, 0.44, 1.00]
-                    ]
-                }
-            },
             trainingHistory: [],
+            epochHistory: [],
             resourceHistory: [],
             checkpoints: [],
             trainingLogs: [],
@@ -299,18 +266,10 @@ export const useMedicalStore = create<MedicalState>()(
             exportQueue: [],
             systemHealth: {
                 overall: 'healthy',
-                components: [
-                    { id: 'api-gateway', name: 'API Gateway', status: 'healthy', latency: 42, lastChecked: new Date().toISOString() },
-                    { id: 'gpu-cluster', name: 'GPU Training Cluster', status: 'healthy', latency: 156, lastChecked: new Date().toISOString() },
-                    { id: 'vector-db', name: 'Vector Database', status: 'healthy', latency: 12, lastChecked: new Date().toISOString() },
-                    { id: 'clinical-storage', name: 'Clinical Blob Storage', status: 'healthy', lastChecked: new Date().toISOString() },
-                ]
+                components: []
             },
             activeAlerts: [],
-            uptimeHistory: Array.from({ length: 30 }, (_, i) => ({
-                timestamp: new Date(Date.now() - (30 - i) * 86400000).toISOString(),
-                score: 99.5 + Math.random() * 0.5
-            })),
+            uptimeHistory: [],
             isHelpTrayOpen: false,
             tutorialStep: null,
 
@@ -375,6 +334,10 @@ export const useMedicalStore = create<MedicalState>()(
             addCheckpoint: (checkpoint: Checkpoint) => set((state) => ({
                 checkpoints: [checkpoint, ...state.checkpoints]
             })),
+            addTrainingMetrics: (metrics: TrainingMetrics) => set((state) => ({
+                epochHistory: [...state.epochHistory, metrics],
+                trainingProgress: metrics
+            })),
             addExportTask: (task: ExportTask) => set((state) => ({
                 exportQueue: [task, ...state.exportQueue]
             })),
@@ -424,6 +387,7 @@ export const useMedicalStore = create<MedicalState>()(
                 galleryFilters: defaultGalleryFilters,
                 biasMetrics: null,
                 trainingLogs: [],
+                epochHistory: [],
                 resourceHistory: [],
                 checkpoints: [],
                 exportQueue: [],

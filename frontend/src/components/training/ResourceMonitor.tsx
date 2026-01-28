@@ -10,29 +10,29 @@ export default function ResourceMonitor() {
   const stats = [
     {
       label: 'GPU VRAM',
-      value: `${resourceUsage.gpuMemory || 8.4} GB`,
-      percent: (resourceUsage.gpuMemory || 8.4) / 24 * 100,
+      value: resourceUsage.gpuMemory > 0 ? `${resourceUsage.gpuMemory.toFixed(1)} GB` : '0.0 GB',
+      percent: Math.min((resourceUsage.gpuMemory / 16) * 100, 100), // Assuming 16GB VRAM average
       icon: <Database className="w-4 h-4" />,
       color: 'bg-medical-accent'
     },
     {
       label: 'GPU Core Load',
-      value: `${resourceUsage.gpuLoad || 92}%`,
-      percent: resourceUsage.gpuLoad || 92,
+      value: `${resourceUsage.gpuLoad.toFixed(1)}%`,
+      percent: resourceUsage.gpuLoad,
       icon: <Activity className="w-4 h-4" />,
       color: 'bg-rose-500'
     },
     {
       label: 'CPU Cluster',
-      value: `${resourceUsage.cpuLoad || 45}%`,
-      percent: resourceUsage.cpuLoad || 45,
+      value: `${resourceUsage.cpuLoad.toFixed(1)}%`,
+      percent: resourceUsage.cpuLoad,
       icon: <Cpu className="w-4 h-4" />,
       color: 'bg-amber-500'
     },
     {
-      label: 'Thermal Status',
-      value: '72°C',
-      percent: 72,
+      label: 'Memory Swap',
+      value: `${resourceUsage.diskSpace.toFixed(1)}%`,
+      percent: resourceUsage.diskSpace,
       icon: <Thermometer className="w-4 h-4" />,
       color: 'bg-orange-500'
     }

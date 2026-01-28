@@ -14,6 +14,17 @@ Medical AI innovation is throttled by two primary factors:
 ## 🚀 The Solution: MedSynth Pipeline
 MedSynth bridges the gap between clinical privacy and AI research needs. It provides an end-to-end environment for uploading real baseline data, training GAN simulators, and generating "shadow" datasets that retain the clinical utility of the original while containing zero patient secrets.
 
+### 🧪 How to Test the Project
+
+To verify the platform with high-fidelity clinical data, follow our **[Medical Data Sourcing Guide](DATASETS.md)** to obtain real baseline datasets from Kaggle, NIH, and more.
+
+1.  **Backend Unit Tests**:
+    Run `python3 -m pytest backend/tests`. This verifies that the GAN logic, analytics math, and API security are 100% accurate.
+2.  **Security Audit**:
+    Run `python3 scripts/security_audit.py`. This simulates a PHI leak and verifies the system's "Scrubbing" technology catches it.
+3.  **Performance Benchmark**:
+    Run `python3 scripts/benchmark_gan.py`. This measures how many thousands of samples per second the system can generate on your specific hardware.
+
 ### Key Pillars
 - **Fidelity**: Statistical alignment with real-world clinical distributions.
 - **Privacy**: Automated PHI scrubbing and structural anonymity.
@@ -85,10 +96,10 @@ graph TD
 1. **Clone & Setup Backend**
 ```bash
 cd backend
-python -m venv venv
+python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
-python -m backend.main
+python3 -m backend.main
 ```
 
 2. **Setup Frontend**

@@ -5,7 +5,7 @@ import { useMedicalStore } from '@/store/useMedicalStore';
 import { medicalApi } from '@/services/api';
 
 export function useRealTimeMetrics() {
-    const { setTrainingProgress, setTraining, addAuditLog, isTraining } = useMedicalStore();
+    const { addTrainingMetrics, setTraining, addAuditLog, isTraining } = useMedicalStore();
     const eventSourceRef = useRef<EventSource | null>(null);
 
     useEffect(() => {
@@ -35,7 +35,7 @@ export function useRealTimeMetrics() {
                 }
 
                 if (data.metrics) {
-                    setTrainingProgress(data.metrics);
+                    addTrainingMetrics(data.metrics);
                 }
             } catch (err) {
                 console.error("Failed to parse SSE data:", err);
@@ -51,7 +51,7 @@ export function useRealTimeMetrics() {
         return () => {
             es.close();
         };
-    }, [isTraining, setTrainingProgress, setTraining, addAuditLog]);
+    }, [isTraining, addTrainingMetrics, setTraining, addAuditLog]);
 
     return { isConnected: !!eventSourceRef.current };
 }
