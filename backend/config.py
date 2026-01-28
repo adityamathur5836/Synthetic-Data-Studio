@@ -19,6 +19,9 @@ class Settings(BaseSettings):
         "http://localhost:8000",
     ]
 
+    # Resource Management
+    LOW_RESOURCE_MODE: bool = os.getenv("LOW_RESOURCE_MODE", "true").lower() == "true"
+    
     class Config:
         case_sensitive = True
 

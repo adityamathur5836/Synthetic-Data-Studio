@@ -15,10 +15,12 @@ from .models import (
     PatientData,
 )
 
+from .config import settings
+
 class GANSimulator:
     def __init__(self):
         self.epoch = 0
-        self.max_epochs = 100
+        self.max_epochs = 20 if settings.LOW_RESOURCE_MODE else 100
     
     def train(self) -> Generator[TrainingMetrics, None, None]:
         """
@@ -51,8 +53,11 @@ class GANSimulator:
                 generator_loss=generator_loss
             )
             
-            # Simulate processing time per epoch (faster for earlier epochs to show progress)
-            time.sleep(0.05 if i < 10 else 0.1)
+            # Simulate processing time per epoch (slower in low resource mode to reduce CPU spike)
+            sleep_time = 0.05 if i < 10 else 0.1
+            if settings.LOW_RESOURCE_MODE:
+                sleep_time *= 2
+            time.sleep(sleep_time)
 
     def generate_samples(self, count: int, patient_request: PatientData = None) -> List[SyntheticSample]:
         """
