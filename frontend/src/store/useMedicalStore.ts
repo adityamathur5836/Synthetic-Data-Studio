@@ -33,6 +33,22 @@ interface ResourceUsage {
     diskSpace: number;
 }
 
+interface BiasMetrics {
+    radarData: {
+        labels: string[];
+        current: number[];
+        target: number[];
+    };
+    suggestions: MitigationSuggestion[];
+}
+
+interface MitigationSuggestion {
+    id: string;
+    text: string;
+    impact: string;
+    confidence: number;
+}
+
 interface GalleryFilters {
     condition?: string;
     minConfidence: number;
@@ -58,6 +74,10 @@ interface MedicalState {
     // Gallery State
     galleryFilters: GalleryFilters;
 
+    // Analytics & Bias State
+    biasMetrics: BiasMetrics | null;
+    mockAnalytics: any;
+
     setSamples: (samples: SyntheticSample[]) => void;
     updateSample: (id: string, updates: Partial<SyntheticSample>) => void;
     addSamples: (samples: SyntheticSample[]) => void;
@@ -71,6 +91,8 @@ interface MedicalState {
     setPipelineConfig: (config: Partial<PipelineConfig>) => void;
     setResourceUsage: (usage: Partial<ResourceUsage>) => void;
     setGalleryFilters: (filters: Partial<GalleryFilters>) => void;
+    setBiasMetrics: (metrics: BiasMetrics) => void;
+    applyMitigation: (suggestionId: string) => void;
     resetPipeline: () => void;
 }
 
@@ -111,6 +133,42 @@ export const useMedicalStore = create<MedicalState>()(
             pipelineConfig: defaultPipelineConfig,
             resourceUsage: defaultResourceUsage,
             galleryFilters: defaultGalleryFilters,
+            biasMetrics: null,
+            mockAnalytics: {
+                demographics: {
+                    age: {
+                        labels: ['18-25', '26-40', '41-60', '61-80', '80+'],
+                        real: [12, 34, 45, 28, 11],
+                        synthetic: [14, 32, 44, 30, 10]
+                    },
+                    gender: {
+                        labels: ['Male', 'Female', 'Other'],
+                        real: [48, 51, 1],
+                        synthetic: [47, 52, 1]
+                    }
+                },
+                prevalence: [
+                    { x: '18-35', y: 'Mild', value: 0.12 },
+                    { x: '36-55', y: 'Mild', value: 0.24 },
+                    { x: '56+', y: 'Mild', value: 0.18 },
+                    { x: '18-35', y: 'Moderate', value: 0.08 },
+                    { x: '36-55', y: 'Moderate', value: 0.45 },
+                    { x: '56+', y: 'Moderate', value: 0.62 },
+                    { x: '18-35', y: 'Severe', value: 0.02 },
+                    { x: '36-55', y: 'Severe', value: 0.15 },
+                    { x: '56+', y: 'Severe', value: 0.85 }
+                ],
+                correlation: {
+                    attributes: ['Age', 'Severity', 'B-Pressure', 'BMI', 'Glucose'],
+                    matrix: [
+                        [1.00, 0.65, 0.42, 0.21, 0.38],
+                        [0.65, 1.00, 0.58, 0.34, 0.72],
+                        [0.42, 0.58, 1.00, 0.12, 0.25],
+                        [0.21, 0.34, 0.12, 1.00, 0.44],
+                        [0.38, 0.72, 0.25, 0.44, 1.00]
+                    ]
+                }
+            },
 
             setSamples: (samples: SyntheticSample[]) => set({ samples }),
             updateSample: (id: string, updates: Partial<SyntheticSample>) => set((state: MedicalState) => ({
@@ -143,9 +201,24 @@ export const useMedicalStore = create<MedicalState>()(
             setResourceUsage: (usage: Partial<ResourceUsage>) => set((state: MedicalState) => ({
                 resourceUsage: { ...state.resourceUsage, ...usage }
             })),
-            setGalleryFilters: (filters: Partial<GalleryFilters>) => set((state: MedicalState) => ({
+            setGalleryFilters: (filters: Partial<GalleryFilters>) => set((state) => ({
                 galleryFilters: { ...state.galleryFilters, ...filters }
             })),
+            setBiasMetrics: (metrics: BiasMetrics) => set({ biasMetrics: metrics }),
+            applyMitigation: (suggestionId: string) => {
+                set((state) => ({
+                    auditLogs: [
+                        {
+                            id: Math.random().toString(36).substring(2, 9),
+                            timestamp: new Date().toISOString(),
+                            user: "Researcher Alpha",
+                            action: "Bias Mitigation Applied",
+                            details: `Suggestion applied: ${suggestionId}`
+                        },
+                        ...state.auditLogs
+                    ]
+                }));
+            },
             resetPipeline: () => set({
                 trainingProgress: null,
                 isTraining: false,
@@ -153,7 +226,8 @@ export const useMedicalStore = create<MedicalState>()(
                 pipelineConfig: defaultPipelineConfig,
                 resourceUsage: defaultResourceUsage,
                 samples: [],
-                galleryFilters: defaultGalleryFilters
+                galleryFilters: defaultGalleryFilters,
+                biasMetrics: null
             })
         }),
         {

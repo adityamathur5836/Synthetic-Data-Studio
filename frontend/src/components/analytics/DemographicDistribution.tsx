@@ -105,7 +105,7 @@ export default function DemographicDistribution({
           color: '#f1f5f9'
         },
         ticks: {
-          font: { size: 10, weight: 'medium' },
+          font: { size: 10, weight: 'normal' },
           color: '#94a3b8'
         }
       },
