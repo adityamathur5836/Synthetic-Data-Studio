@@ -77,6 +77,8 @@ interface Checkpoint {
     timestamp: string;
     epoch: number;
     metrics: TrainingMetrics;
+    fid: number;
+    isBest: boolean;
     path: string;
 }
 

@@ -1,16 +1,20 @@
 "use client";
 
+export const dynamic = 'force-dynamic';
+
+import dynamic_loader from 'next/dynamic';
 import { LayoutGrid, Microscope, ShieldCheck as EthicsShield, FileText, Download, Info, BarChart3, PieChart, ShieldAlert, TrendingUp } from 'lucide-react';
 import { useState } from 'react';
 import { useMedicalStore } from '@/store/useMedicalStore';
 import MetricCard from '@/components/metrics/MetricCard';
 import PrivacyGauge from '@/components/metrics/PrivacyGauge';
 import MetricDrillDown from '@/components/metrics/MetricDrillDown';
-import DemographicDistribution from '@/components/analytics/DemographicDistribution';
-import ComparativeHeatmap from '@/components/analytics/ComparativeHeatmap';
-import CorrelationMatrix from '@/components/analytics/CorrelationMatrix';
-import BiasRadarChart from '@/components/analytics/BiasRadarChart';
-import MitigationPanel from '@/components/analytics/MitigationPanel';
+
+const DemographicDistribution = dynamic_loader(() => import('@/components/analytics/DemographicDistribution'), { ssr: false });
+const ComparativeHeatmap = dynamic_loader(() => import('@/components/analytics/ComparativeHeatmap'), { ssr: false });
+const CorrelationMatrix = dynamic_loader(() => import('@/components/analytics/CorrelationMatrix'), { ssr: false });
+const BiasRadarChart = dynamic_loader(() => import('@/components/analytics/BiasRadarChart'), { ssr: false });
+const MitigationPanel = dynamic_loader(() => import('@/components/analytics/MitigationPanel'), { ssr: false });
 
 export default function AnalyzePage() {
   const { analytics, mockAnalytics } = useMedicalStore();

@@ -1,9 +1,13 @@
 "use client";
 
+export const dynamic = 'force-dynamic';
+
+import dynamic_loader from 'next/dynamic';
 import HealthDashboard from '@/components/health/HealthDashboard';
 import AlertSystem from '@/components/health/AlertSystem';
-import PerformanceTracker from '@/components/health/PerformanceTracker';
-import CapacityPlanner from '@/components/health/CapacityPlanner';
+
+const PerformanceTracker = dynamic_loader(() => import('@/components/health/PerformanceTracker'), { ssr: false });
+const CapacityPlanner = dynamic_loader(() => import('@/components/health/CapacityPlanner'), { ssr: false });
 import { 
   ShieldCheck, Activity, 
   Settings2, Download,

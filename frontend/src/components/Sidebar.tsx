@@ -41,20 +41,21 @@ export default function Sidebar() {
           </span>
         </div>
 
-        <nav className="space-y-1">
+        <nav className="space-y-1" aria-label="Main Navigation">
           {navItems.map((item) => {
             const isActive = pathname === item.href;
             return (
               <Link
                 key={item.name}
                 href={item.href}
+                aria-current={isActive ? 'page' : undefined}
                 className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
                   isActive 
                     ? 'bg-medical-accent/10 text-medical-accent' 
                     : 'text-medical-muted hover:bg-slate-50 hover:text-medical-text'
                 }`}
               >
-                <item.icon className="w-5 h-5" />
+                <item.icon className="w-5 h-5" aria-hidden="true" />
                 {item.name}
               </Link>
             );

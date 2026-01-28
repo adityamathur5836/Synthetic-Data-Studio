@@ -4,8 +4,9 @@ import time
 from typing import List
 import uuid
 
-from fastapi import FastAPI, Depends, HTTPException, status, Request, UploadFile, BackgroundTasks
+from fastapi import FastAPI, Depends, HTTPException, status, Request, UploadFile, BackgroundTasks, Response
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.responses import StreamingResponse
 from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -48,6 +49,7 @@ app = FastAPI(
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(SlowAPIMiddleware)
+app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 # --- CORS Setup ---
 app.add_middleware(
@@ -141,7 +143,14 @@ async def train_model(current_user: User = Depends(get_current_active_user)):
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 @app.get(f"{settings.API_V1_STR}/analytics", response_model=AnalyticsMetrics, tags=["Core"])
-async def get_analytics(current_user: User = Depends(get_current_active_user)):
+async def get_analytics(
+    response: Response,
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Get live analytics metrics. Cached for 30s as it's computationally stable.
+    """
+    response.headers["Cache-Control"] = "public, max-age=30"
     return analytics_engine.get_metrics()
 
 @app.post(f"{settings.API_V1_STR}/upload", response_model=UploadResponse, tags=["Core"])
@@ -212,11 +221,13 @@ async def submit_pia(
 
 @app.get(f"{settings.API_V1_STR}/compliance/status", tags=["Compliance"])
 async def get_compliance_status(
+    response: Response,
     current_user: User = Depends(get_current_active_user)
 ):
     """
-    Get an overview of platform compliance readiness.
+    Get an overview of platform compliance readiness. Cached for 1 hour.
     """
+    response.headers["Cache-Control"] = "public, max-age=3600"
     return {
         "hipaa_compliance": 92.5,
         "gdpr_readiness": 88.0,
