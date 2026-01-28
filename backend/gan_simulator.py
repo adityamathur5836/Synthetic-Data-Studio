@@ -95,8 +95,14 @@ class GANSimulator:
             quality_score = random.uniform(3.5, 5.0) # High quality GAN outputs
             privacy_score = random.uniform(0.85, 0.99) # High privacy preservation
             
+            # Determine Condition
+            if patient_request and patient_request.condition:
+                condition_name = patient_request.condition
+            else:
+                condition_name = "Diabetic Retinopathy" if dr_level != DrLevel.NONE else "Healthy"
+            
             metadata = MedicalMetadata(
-                condition="Diabetic Retinopathy" if dr_level != DrLevel.NONE else "Healthy",
+                condition=condition_name,
                 dr_level=dr_level,
                 image_quality_score=round(quality_score, 2),
                 privacy_score=round(privacy_score, 4)
