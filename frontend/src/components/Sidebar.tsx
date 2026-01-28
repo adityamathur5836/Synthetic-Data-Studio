@@ -21,6 +21,7 @@ const navItems = [
   { name: '4. Analyze Results', href: '/analyze', icon: BarChart3 },
   { name: '5. Export Data', href: '/export', icon: ShieldCheck },
   { name: 'Audit Trail', href: '/audit', icon: ShieldCheck },
+  { name: 'Compliance', href: '/settings/compliance', icon: ShieldCheck },
   { name: 'System Health', href: '/settings/health', icon: Activity },
   { name: 'Research Docs', href: '/docs', icon: GraduationCap },
 ];

@@ -1,4 +1,5 @@
 from datetime import datetime
+from enum import Enum
 from typing import Optional, List
 from pydantic import BaseModel, Field
 
@@ -18,7 +19,10 @@ class User(BaseModel):
 class UserInDB(User):
     hashed_password: str
 
-from enum import Enum
+class UserRole(str, Enum):
+    RESEARCHER = "researcher"
+    ADMIN = "admin"
+    AUDITOR = "auditor"
 
 # --- Enums ---
 class Gender(str, Enum):
@@ -119,3 +123,30 @@ class UploadResponse(BaseModel):
     task_id: str
     status: str
     message: str
+
+# --- Compliance & Audit Models ---
+class AuditLog(BaseModel):
+    id: str
+    timestamp: datetime
+    user_id: str
+    operation: str # e.g., "GENERATE", "UPLOAD", "EXPORT"
+    details: str
+    resource_id: Optional[str] = None
+    ip_address: Optional[str] = None
+
+class PrivacyImpactAssessment(BaseModel):
+    id: str
+    user_id: str
+    timestamp: datetime
+    data_use_case: str
+    risk_score: float
+    mitigation_steps: List[str]
+    is_approved: bool
+
+class ConsentRecord(BaseModel):
+    id: str
+    patient_id: str
+    consent_type: str
+    granted_at: datetime
+    expires_at: Optional[datetime] = None
+    revoked: bool = False

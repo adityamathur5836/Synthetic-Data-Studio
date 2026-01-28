@@ -1,11 +1,11 @@
 from datetime import datetime, timedelta, timezone
-from typing import Optional
+from typing import Optional, List
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from .config import settings
-from .models import TokenData, User, UserInDB
+from .models import TokenData, User, UserInDB, UserRole
 
 # Password handling
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -17,6 +17,21 @@ fake_users_db = {
         "username": "researcher",
         "email": "researcher@medical-ai.com",
         "hashed_password": pwd_context.hash("securepassword123"),
+        "role": UserRole.RESEARCHER,
+        "disabled": False,
+    },
+    "admin": {
+        "username": "admin",
+        "email": "admin@medical-ai.com",
+        "hashed_password": pwd_context.hash("adminpassword123"),
+        "role": UserRole.ADMIN,
+        "disabled": False,
+    },
+    "auditor": {
+        "username": "auditor",
+        "email": "auditor@medical-ai.com",
+        "hashed_password": pwd_context.hash("auditorpassword123"),
+        "role": UserRole.AUDITOR,
         "disabled": False,
     }
 }
@@ -70,3 +85,15 @@ async def get_current_active_user(current_user: User = Depends(get_current_user)
     if current_user.disabled:
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
+
+class RoleChecker:
+    def __init__(self, allowed_roles: List[UserRole]):
+        self.allowed_roles = allowed_roles
+
+    def __call__(self, user: User = Depends(get_current_active_user)):
+        if user.role not in self.allowed_roles:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Operation not permitted for this user role"
+            )
+        return user
