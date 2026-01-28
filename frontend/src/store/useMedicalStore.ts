@@ -206,6 +206,12 @@ interface MedicalState {
     addSystemAlert: (alert: Omit<SystemAlert, 'id' | 'isAcknowledged' | 'timestamp'>) => void;
     acknowledgeAlert: (alertId: string) => void;
 
+    // Documentation State
+    isHelpTrayOpen: boolean;
+    setHelpTrayOpen: (isOpen: boolean) => void;
+    tutorialStep: number | null;
+    setTutorialStep: (step: number | null) => void;
+
     resetPipeline: () => void;
 }
 
@@ -303,6 +309,8 @@ export const useMedicalStore = create<MedicalState>()(
                 timestamp: new Date(Date.now() - (30 - i) * 86400000).toISOString(),
                 score: 99.5 + Math.random() * 0.5
             })),
+            isHelpTrayOpen: false,
+            tutorialStep: null,
 
             setSamples: (samples: SyntheticSample[]) => set({ samples }),
             updateSample: (id: string, updates: Partial<SyntheticSample>) => set((state: MedicalState) => ({
@@ -402,6 +410,8 @@ export const useMedicalStore = create<MedicalState>()(
             acknowledgeAlert: (alertId) => set((state) => ({
                 activeAlerts: state.activeAlerts.map(a => a.id === alertId ? { ...a, isAcknowledged: true } : a)
             })),
+            setHelpTrayOpen: (isHelpTrayOpen) => set({ isHelpTrayOpen }),
+            setTutorialStep: (tutorialStep) => set({ tutorialStep }),
             resetPipeline: () => set({
                 trainingProgress: null,
                 isTraining: false,
@@ -417,7 +427,9 @@ export const useMedicalStore = create<MedicalState>()(
                 exportQueue: [],
                 datasetVersions: [],
                 apiKeys: [],
-                activeAlerts: []
+                activeAlerts: [],
+                isHelpTrayOpen: false,
+                tutorialStep: null
             })
         }),
         {

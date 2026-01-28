@@ -9,7 +9,8 @@ import {
   Activity, 
   UploadCloud, 
   ShieldCheck,
-  BrainCircuit
+  BrainCircuit,
+  GraduationCap
 } from 'lucide-react';
 
 const navItems = [
@@ -21,6 +22,7 @@ const navItems = [
   { name: '5. Export Data', href: '/export', icon: ShieldCheck },
   { name: 'Audit Trail', href: '/audit', icon: ShieldCheck },
   { name: 'System Health', href: '/settings/health', icon: Activity },
+  { name: 'Research Docs', href: '/docs', icon: GraduationCap },
 ];
 
 export default function Sidebar() {
