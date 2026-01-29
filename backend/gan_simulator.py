@@ -30,7 +30,12 @@ class GANSimulator:
         self._load_model()
 
     def _load_model(self):
-        """Attempts to load real GAN weights if they exist."""
+        """Attempts to load real GAN weights if they exist, but skips in low resource mode for stability."""
+        if settings.LOW_RESOURCE_MODE:
+            print("ℹ️ Low resource mode active. Skipping real model load for stability.")
+            self.model = None
+            return
+
         if os.path.exists(self.weights_path):
             try:
                 self.model = MedicalGenerator()
