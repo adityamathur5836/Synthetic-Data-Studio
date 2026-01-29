@@ -3,6 +3,7 @@
 import { Play, Pause, Square, RotateCcw, ShieldAlert, AlertTriangle } from 'lucide-react';
 import { useMedicalStore } from '@/store/useMedicalStore';
 import { useState, useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 
 export default function PipelineControls() {
   const { 
@@ -11,9 +12,12 @@ export default function PipelineControls() {
     isGenerating, 
     setGenerating, 
     resetPipeline, 
-    addAuditLog 
+    addAuditLog,
+    startGeneration 
   } = useMedicalStore();
   
+  const pathname = usePathname();
+  const isGeneratePage = pathname === '/generate';
   const [showConfirmStop, setShowConfirmStop] = useState(false);
   const isActive = isTraining || isGenerating;
 
@@ -36,9 +40,16 @@ export default function PipelineControls() {
     if (isTraining) {
       setTraining(false);
       addAuditLog("GAN Training Paused", "Researcher manually paused the training process.");
+    } else if (isGenerating) {
+      setGenerating(false);
+      addAuditLog("Data Synthesis Paused", "Researcher manually paused the generation process.");
     } else {
-      setTraining(true);
-      addAuditLog("GAN Training Started", "Researcher initiated model training.");
+      if (isGeneratePage) {
+        startGeneration();
+      } else {
+        setTraining(true);
+        addAuditLog("GAN Training Started", "Researcher initiated model training.");
+      }
     }
   };
 
@@ -71,9 +82,9 @@ export default function PipelineControls() {
               : 'bg-medical-accent hover:bg-blue-500 text-white'
           }`}
         >
-          {isTraining ? <Pause className="w-4 h-4 fill-current" /> : <Play className="w-4 h-4 fill-current" />}
+          {isActive ? <Pause className="w-4 h-4 fill-current" /> : <Play className="w-4 h-4 fill-current" />}
           <span className="text-sm font-bold uppercase tracking-wider">
-            {isTraining ? 'Pause' : 'Start'}
+            {isActive ? 'Pause' : 'Start'}
           </span>
           
           <span className="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-slate-800 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">

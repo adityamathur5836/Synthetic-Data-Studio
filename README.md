@@ -56,14 +56,22 @@ MedSynth bridges the gap between clinical privacy and AI research needs. It prov
 
 ### 🧪 How to Test the Project
 
-To verify the platform with high-fidelity clinical data, follow our **[Medical Data Sourcing Guide](DATASETS.md)** to obtain real baseline datasets from Kaggle, NIH, and more.
+#### 1. Simulated Mode (Default)
+Run `python3 -m backend.main`. The dashboard will show simulated training curves and high-quality placeholder images.
 
-1.  **Backend Unit Tests**:
-    Run `python3 -m pytest backend/tests`. This verifies that the GAN logic, analytics math, and API security are 100% accurate.
-2.  **Security Audit**:
-    Run `python3 scripts/security_audit.py`. This simulates a PHI leak and verifies the system's "Scrubbing" technology catches it.
-3.  **Performance Benchmark**:
-    Run `python3 scripts/benchmark_gan.py`. This measures how many thousands of samples per second the system can generate on your specific hardware.
+#### 2. Real Hybrid Mode (The "Colab" Flow)
+To test the real AI integration without damaging your device:
+1.  **Prep Data**: Upload medical images in the **Upload** page.
+2.  **Export**: Run `python scripts/export_dataset.py`. This creates a `dataset.zip` in the `generated/` folder.
+3.  **Train in Cloud**: Upload that ZIP to **Google Drive** and run our [Colab Notebook](https://colab.research.google.com/).
+4.  **Local Deployment**: 
+    - Create a folder: `backend/weights/`.
+    - Download your trained file as `generator_v1.pth` and place it there.
+    - Restart the backend. You will see: `✅ Real GAN weights loaded`.
+
+#### 3. Verification
+- **Backend Tests**: Run `python3 -m pytest backend/tests`.
+- **Benchmark**: Run `python3 scripts/benchmark_gan.py`.
 
 ### Key Pillars
 - **Fidelity**: Statistical alignment with real-world clinical distributions.
@@ -160,6 +168,14 @@ npm run dev
 MedSynth is highly optimized for the **M3 MacBook Pro (8GB RAM)**:
 - **Automatic Resource Detection**: Backend halves epoch cycles and batch sizes when `LOW_RESOURCE_MODE=true`.
 - **Docker Limits**: Pre-configured `docker-compose.yml` caps backend memory at 4GB to preserve host stability.
+
+---
+
+## ☁️ Hybrid AI Flow
+MedSynth uses a **Hybrid Cloud-Local** architecture:
+1. **Local (Mac)**: Data management, scrubbing, and lightweight inference.
+2. **Cloud (Google Colab)**: Compute-intensive GAN training using free NVIDIA T4 GPUs.
+3. **Storage (Google Drive)**: Persistent checkpointing for multi-day training runs.
 
 ---
 

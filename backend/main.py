@@ -4,9 +4,11 @@ import time
 from typing import List
 import uuid
 
-from fastapi import FastAPI, Depends, HTTPException, status, Request, UploadFile, BackgroundTasks, Response
+from fastapi import FastAPI, Depends, HTTPException, status, Request, UploadFile, BackgroundTasks, Response, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
+from fastapi.staticfiles import StaticFiles
+import os
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.responses import StreamingResponse
 from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -60,6 +62,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# --- Static Files ---
+if not os.path.exists("uploads"):
+    os.makedirs("uploads")
+app.mount("/api/uploads", StaticFiles(directory="uploads"), name="uploads")
+
 # --- Auth Routes ---
 @app.post(f"{settings.API_V1_STR}/auth/login", response_model=Token, tags=["Auth"])
 @limiter.limit("5/minute")
@@ -82,7 +89,6 @@ async def login_for_access_token(
 # --- Core Routes ---
 @app.get("/health", tags=["Health"])
 async def health_check():
-    import os
     import shutil
     
     # Check disk space
@@ -142,6 +148,18 @@ async def train_model(current_user: User = Depends(get_current_active_user)):
     
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 
+@app.get("/api/synthetic/generate/{image_id}.png", tags=["Core"])
+async def get_synthetic_image(image_id: str):
+    """
+    Serve a real GAN-generated image on the fly.
+    """
+    try:
+        image_bytes = gan_simulator.generate_real_image()
+        return StreamingResponse(image_bytes, media_type="image/png")
+    except ValueError:
+        # Fallback if model not loaded (shouldn't happen if URL was generated)
+        raise HTTPException(status_code=404, detail="Real GAN not active")
+
 @app.get(f"{settings.API_V1_STR}/analytics", response_model=AnalyticsMetrics, tags=["Core"])
 async def get_analytics(
     response: Response,
@@ -153,15 +171,25 @@ async def get_analytics(
     response.headers["Cache-Control"] = "public, max-age=30"
     return analytics_engine.get_metrics()
 
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    print(f"❌ Validation error: {exc.errors()}")
+    return JSONResponse(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        content={"detail": exc.errors()},
+    )
+
 @app.post(f"{settings.API_V1_STR}/upload", response_model=UploadResponse, tags=["Core"])
 async def upload_dataset(
     background_tasks: BackgroundTasks,
-    request: Request,
-    files: List[UploadFile],
+    files: List[UploadFile] = File(...),
     current_user: User = Depends(get_current_active_user)
 ):
     """
-    Handle chunked file uploads for clinical datasets.
+    Handle multi-file uploads for clinical datasets.
     """
     task_id = str(uuid.uuid4())
     
@@ -170,11 +198,12 @@ async def upload_dataset(
         user_id=current_user.username,
         operation="UPLOAD",
         details=f"Uploaded {len(files)} files to dataset pool",
-        resource_id=task_id,
-        ip_address=request.client.host
+        resource_id=task_id
     )
     
-    # Process files (simplified)
+    # Process files in background
+    background_tasks.add_task(upload_manager.process_dataset, task_id, files)
+    
     return UploadResponse(
         task_id=task_id,
         status="processing",

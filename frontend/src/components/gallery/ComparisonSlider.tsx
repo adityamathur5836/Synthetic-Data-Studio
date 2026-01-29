@@ -43,10 +43,17 @@ export default function ComparisonSlider({ realImageUrl, syntheticImageUrl, clas
     >
       {/* Synthetic Image (Background) */}
       <div className="absolute inset-0 flex items-center justify-center">
-         <div className="w-full h-full bg-gradient-to-br from-blue-900 to-indigo-950 flex items-center justify-center">
-            <div className="text-white/20 font-black text-4xl uppercase tracking-[1em] rotate-12">SYNTHETIC</div>
-            {/* Real implementation would use an <img /> */}
-         </div>
+         {syntheticImageUrl ? (
+            <img 
+               src={syntheticImageUrl} 
+               alt="Synthetic Variant" 
+               className="w-full h-full object-cover"
+            />
+         ) : (
+            <div className="w-full h-full bg-gradient-to-br from-blue-900 to-indigo-950 flex items-center justify-center">
+               <div className="text-white/20 font-black text-4xl uppercase tracking-[1em] rotate-12">SYNTHETIC</div>
+            </div>
+         )}
       </div>
 
       {/* Real Image (Foreground clipped) */}
@@ -54,10 +61,19 @@ export default function ComparisonSlider({ realImageUrl, syntheticImageUrl, clas
         className="absolute inset-0 flex items-center justify-center border-r-2 border-white pointer-events-none"
         style={{ width: `${position}%`, overflow: 'hidden' }}
       >
-        <div className="absolute top-0 left-0 w-[100vw] h-full flex items-center justify-center">
-           <div className="w-full h-full bg-gradient-to-br from-emerald-900 to-teal-950 flex items-center justify-center" style={{ width: containerRef.current?.offsetWidth }}>
-              <div className="text-white/20 font-black text-4xl uppercase tracking-[1em] rotate-12">ORIGINAL</div>
-           </div>
+        <div className="absolute top-0 left-0 h-full flex items-center justify-center" style={{ width: containerRef.current?.offsetWidth || '100vw' }}>
+           {realImageUrl ? (
+              <img 
+                src={realImageUrl} 
+                alt="Real Baseline" 
+                className="h-full object-cover"
+                style={{ width: containerRef.current?.offsetWidth }}
+              />
+           ) : (
+              <div className="w-full h-full bg-gradient-to-br from-emerald-900 to-teal-950 flex items-center justify-center">
+                 <div className="text-white/20 font-black text-4xl uppercase tracking-[1em] rotate-12">ORIGINAL</div>
+              </div>
+           )}
         </div>
       </div>
 

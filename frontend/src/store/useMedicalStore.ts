@@ -178,6 +178,7 @@ interface MedicalState {
     activeAlerts: SystemAlert[];
     uptimeHistory: { timestamp: string; score: number }[];
 
+    startGeneration: (count?: number) => Promise<void>;
     setSamples: (samples: SyntheticSample[]) => void;
     updateSample: (id: string, updates: Partial<SyntheticSample>) => void;
     addSamples: (samples: SyntheticSample[]) => void;
@@ -298,6 +299,32 @@ export const useMedicalStore = create<MedicalState>()(
             logout: () => {
                 medicalApi.setAuthToken(null);
                 set({ token: null, user: null, isAuthModalOpen: true });
+            },
+
+            startGeneration: async (count?: number) => {
+                const { pipelineConfig, addSamples, addAuditLog, token } = useMedicalStore.getState();
+
+                // Clear old samples to avoid stale "?? years" data
+                set({ samples: [], isGenerating: true });
+
+                // Explicitly sync token just in case
+                if (token) medicalApi.setAuthToken(token);
+
+                addAuditLog("Data Synthesis Started", `Initiated generation of ${count || pipelineConfig.batchSize} samples.`);
+
+                try {
+                    const newSamples = await medicalApi.generateData(
+                        { condition: "Medical Scan", age: 0, scan_type: "Retinal" }, // Placeholder patient data
+                        count || pipelineConfig.batchSize
+                    );
+                    addSamples(newSamples);
+                    addAuditLog("Data Synthesis Completed", `Successfully generated ${newSamples.length} samples.`);
+                } catch (error) {
+                    console.error("Generation failed:", error);
+                    addAuditLog("Data Synthesis Failed", "An error occurred during image generation.");
+                } finally {
+                    set({ isGenerating: false });
+                }
             },
 
             setSamples: (samples: SyntheticSample[]) => set({ samples }),
@@ -428,6 +455,11 @@ export const useMedicalStore = create<MedicalState>()(
         {
             name: 'medical-storage',
             storage: createJSONStorage(() => localStorage),
+            onRehydrateStorage: () => (state) => {
+                if (state?.token) {
+                    medicalApi.setAuthToken(state.token);
+                }
+            },
             partialize: (state: MedicalState) => ({
                 pipelineConfig: state.pipelineConfig,
                 auditLogs: state.auditLogs,

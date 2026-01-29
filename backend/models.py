@@ -4,27 +4,12 @@ from typing import Optional, List
 from pydantic import BaseModel, Field
 
 # --- Auth Models ---
-class Token(BaseModel):
-    access_token: str
-    token_type: str
-
-class TokenData(BaseModel):
-    username: Optional[str] = None
-
-class User(BaseModel):
-    username: str
-    email: Optional[str] = None
-    disabled: Optional[bool] = None
-
-class UserInDB(User):
-    hashed_password: str
-
+# --- Enums ---
 class UserRole(str, Enum):
     RESEARCHER = "researcher"
     ADMIN = "admin"
     AUDITOR = "auditor"
 
-# --- Enums ---
 class Gender(str, Enum):
     MALE = "Male"
     FEMALE = "Female"
@@ -43,6 +28,23 @@ class DrLevel(str, Enum):
     MODERATE = "Moderate"
     SEVERE = "Severe"
     PROLIFERATIVE = "Proliferative"
+
+# --- Auth Models ---
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+class TokenData(BaseModel):
+    username: Optional[str] = None
+
+class User(BaseModel):
+    username: str
+    email: Optional[str] = None
+    disabled: Optional[bool] = None
+    role: UserRole = UserRole.RESEARCHER
+
+class UserInDB(User):
+    hashed_password: str
 
 # --- Medical Data Models ---
 class Demographics(BaseModel):

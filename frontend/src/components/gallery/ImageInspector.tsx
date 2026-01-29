@@ -64,14 +64,26 @@ export default function ImageInspector({ sampleId, onClose }: ImageInspectorProp
 
            <div className="flex-1 relative rounded-2xl overflow-hidden bg-slate-900 shadow-inner">
               {viewMode === 'single' ? (
-                <div className="absolute inset-0 flex items-center justify-center">
-                   {/* High Res medical scan placeholder */}
-                   <div className="w-3/4 aspect-square rounded-full border border-blue-500/10 flex items-center justify-center">
-                      <div className="w-1/2 h-1/2 rounded-full border-4 border-medical-success/30 shadow-[0_0_50px_rgba(16,185,129,0.2)]" />
-                   </div>
+                <div className="absolute inset-0 flex items-center justify-center p-8">
+                   {/* High Res medical scan Rendering */}
+                   {sample.image_url ? (
+                     <img 
+                       src={sample.image_url} 
+                       alt={`Synthetic ${sample.medical_metadata?.condition || 'Scan'}`}
+                       className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
+                     />
+                   ) : (
+                     <div className="w-3/4 aspect-square rounded-full border border-blue-500/10 flex items-center justify-center">
+                        <div className="w-1/2 h-1/2 rounded-full border-4 border-medical-success/30 shadow-[0_0_50px_rgba(16,185,129,0.2)]" />
+                     </div>
+                   )}
                 </div>
               ) : (
-                <ComparisonSlider className="h-full" />
+                <ComparisonSlider 
+                  className="h-full" 
+                  syntheticImageUrl={sample.image_url}
+                  realImageUrl="http://localhost:8000/api/uploads/328e3328-2b13-499b-93e3-29f107fb71e0_13_right.jpeg"
+                />
               )}
               
               <div className="absolute top-4 left-4 p-3 rounded-xl bg-black/40 backdrop-blur-md border border-white/10 text-white space-y-1">
@@ -105,11 +117,11 @@ export default function ImageInspector({ sampleId, onClose }: ImageInspectorProp
                  <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">
                        <p className="text-[10px] font-bold text-slate-400 mb-1 flex items-center gap-1.5"><User className="w-3 h-3"/> Victim Gender</p>
-                       <p className="text-sm font-bold text-slate-900">Female</p>
+                       <p className="text-sm font-bold text-slate-900">{sample.demographics?.gender || 'Unknown'}</p>
                     </div>
                     <div className="space-y-1">
                        <p className="text-[10px] font-bold text-slate-400 mb-1 flex items-center gap-1.5"><Calendar className="w-3 h-3"/> Target Age</p>
-                       <p className="text-sm font-bold text-slate-900">54 years</p>
+                       <p className="text-sm font-bold text-slate-900">{sample.demographics?.age || '??'} years</p>
                     </div>
                  </div>
               </div>

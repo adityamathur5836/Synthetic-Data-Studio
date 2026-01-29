@@ -96,7 +96,7 @@ export const medicalApi = {
 
         const response = await apiClient.post('/upload', formData, {
             headers: {
-                'Content-Type': 'multipart/form-data',
+                'Content-Type': 'undefined', // Force browser to set boundary
             },
         });
         return response.data;
