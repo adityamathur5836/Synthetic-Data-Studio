@@ -6,7 +6,7 @@ import { useMedicalStore } from '@/store/useMedicalStore';
 import { medicalApi } from '@/services/api';
 
 export default function LoginModal() {
-  const { isAuthModalOpen, setAuth, setAuthModalOpen } = useMedicalStore();
+  const { isAuthModalOpen, setAuth, setAuthModalOpen, logout } = useMedicalStore();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -14,11 +14,12 @@ export default function LoginModal() {
 
   React.useEffect(() => {
     const handleUnauthorized = () => {
+      logout(); // Clear stale user/token state
       setAuthModalOpen(true);
     };
     window.addEventListener('auth-unauthorized', handleUnauthorized);
     return () => window.removeEventListener('auth-unauthorized', handleUnauthorized);
-  }, [setAuthModalOpen]);
+  }, [setAuthModalOpen, logout]);
 
   if (!isAuthModalOpen) return null;
 

@@ -7,7 +7,7 @@ import {
     Dataset
 } from '../types/medical';
 
-const API_BASE_URL = 'http://localhost:8000/api/v1';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
 
 const apiClient = axios.create({
     baseURL: API_BASE_URL,
@@ -45,8 +45,7 @@ apiClient.interceptors.response.use(
     (response) => response,
     (error) => {
         if (error.response?.status === 401) {
-            // We still need to trigger the modal, so we'll use a globally available trigger
-            // since we can't import the store directly here to avoid circularity.
+            authToken = null; // Clear local stale token
             if (typeof window !== 'undefined') {
                 window.dispatchEvent(new CustomEvent('auth-unauthorized'));
             }
